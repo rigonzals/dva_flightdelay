@@ -72,3 +72,15 @@ def read_combined_flights(filepath):
                   &(~df['ArrDelay'].is_null())
                   &(~df['dep_datetime'].is_null()))
     return df
+
+# function to read in the master file
+def read_master(filepath):
+    #read in the filepath
+    df = pl.read_csv(filepath
+                , ignore_errors = True
+                , infer_schema = False
+                , quote_char = None)
+    #keep only the columns that we need to join the aircraft ref files
+    df = df.select(['N-NUMBER'
+                   , 'MFR MDL CODE'])
+    return df
