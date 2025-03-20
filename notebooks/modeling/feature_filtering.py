@@ -58,12 +58,13 @@ for k,v in percentages.items():
 list_remove
 
 # %%
-
-# %%
 df_fe = df_fe.drop(list_remove)
 
 # %%
 df_fe.shape
+
+# %%
+df_fe
 
 # %% [markdown]
 # # Export

@@ -68,7 +68,6 @@ def read_ACFT(filepath):
     return df
 
 
-# %%
 # function to read in the master file
 def read_master(filepath):
     #read in the filepath
@@ -86,8 +85,6 @@ def read_master(filepath):
 
     return df
 
-
-# %%
 import re
 
 def clean_name(name: str) -> str:
@@ -138,7 +135,6 @@ def read_labor_stats(filepath):
     return df
 
 
-# %%
 #function to read in the labor statistics data
 def read_monthly_transport_stats(filepath):
     #read in the file
@@ -196,7 +192,7 @@ def read_proc_airport_departure_stats(filepath):
 
 # %%
 #function to read in and do some cleaning on combined flights files
-def read_combined_flights_parquet(filepath):
+def read_combined_flights_parquet(filepath, list_airport_codes):
     #read in the file and keep some data columns from becoming forced to ints
     # filter columns
     list_cols_keep = ['FlightDate', 'Airline', 'Origin', 'Dest', 'Cancelled', 'Diverted',
@@ -224,8 +220,12 @@ def read_combined_flights_parquet(filepath):
                                         #  , 'Month':pl.Int64
                    #                     }
                     , columns=list_cols_keep)
+                    
+    df = df.filter(
+      df["Origin"].is_in(list_airport_codes) | df["Dest"].is_in(list_airport_codes)
+)
 
-    df = df.with_columns(pl.col("FlightDate").cast(pl.String))
+    df = df.with_columns(pl.col("FlightDate").cast(pl.String).str.head(10) )
     df = df.with_columns(pl.col("CRSDepTime").cast(pl.String))
     df = df.with_columns(pl.col("DepTime").cast(pl.String).str.replace(r"\.0$", ""))
     df = df.with_columns(pl.col("CRSArrTime").cast(pl.String).str.replace(r"\.0$", ""))
@@ -294,13 +294,16 @@ path_raw = "../../data/"
 path_proc = "../../outputs/proc/"
 
 # %%
-dt_year = 2019#2020#
+dt_year = 2021#2019#2019#2020#
 dt_ini = f"{dt_year}-01-01"
 dt_prev = shift_date(dt_ini, years=-1)
 dt_year_prev = dt_prev[:4]
 years = [dt_year_prev, dt_year]
 years
 
+
+# %%
+list_filter_airport_codes = ["EWR", "JFK", "LGA"]
 
 # %%
 # Monthly transport stats
@@ -346,8 +349,11 @@ master.shape
 # %%
 # Flights combined, # Only use objective year
 filepath_cf = f'{path_raw}Combined_Flights_'+str(dt_year)+'.parquet'
-df_merge = read_combined_flights_parquet(filepath_cf)
+df_merge = read_combined_flights_parquet(filepath_cf, list_airport_codes=list_filter_airport_codes)
 df_merge.shape
+
+# %%
+df_merge
 
 # %%
 df_merge = df_merge.with_columns(
