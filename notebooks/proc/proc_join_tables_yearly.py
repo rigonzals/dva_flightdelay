@@ -353,14 +353,15 @@ df_merge = read_combined_flights_parquet(filepath_cf, list_airport_codes=list_fi
 df_merge.shape
 
 # %%
-df_merge
-
-# %%
 df_merge = df_merge.with_columns(
-    pl.concat_str([pl.col("flightdate"),pl.col("crsdeptime"), pl.col("operating_airline"), pl.col("origin"), pl.col("dest")]).alias("unique_key")
+    pl.concat_str([pl.col("flightdate"), pl.lit('-'),pl.col("crsdeptime"), pl.lit('-'),pl.col("operating_airline"), pl.lit('-'),
+                    pl.col("origin"),  pl.lit('-'),pl.col("dest")]).alias("unique_key")
 )
 df_merge = df_merge.unique(subset=["unique_key"]) 
 df_merge.shape, df_merge["unique_key"].n_unique()
+
+# %%
+df_merge["unique_key"]
 
 # %% [markdown]
 # # 2. Processing
@@ -450,5 +451,7 @@ df_merge.write_parquet(f"{path_proc}{dt_year}_join_datasets.parquet", compressio
 
 # %%
 df_merge.columns
+
+# %%
 
 # %%
