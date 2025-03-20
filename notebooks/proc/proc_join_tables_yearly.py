@@ -60,6 +60,10 @@ def read_ACFT(filepath):
     df = df.to_dummies(['TYPE-ENG'
                         , 'AC-CAT'
                         , 'AC-WEIGHT'])
+
+    new_columns = [clean_name(col) for col in df.columns]
+
+    df.columns = new_columns
     
     return df
 
@@ -75,10 +79,22 @@ def read_master(filepath):
     #keep only the columns that we need to join the aircraft ref files
     df = df.select(['N-NUMBER'
                    , 'MFR MDL CODE'])
+
+    new_columns = [clean_name(col) for col in df.columns]
+
+    df.columns = new_columns
+
     return df
 
 
 # %%
+import re
+
+def clean_name(name: str) -> str:
+    name = name.lower()  # Convert to lowercase
+    name = re.sub(r"[^a-z0-9_ ]", "", name)  # Remove special characters
+    name = name.replace(" ", "_")  # Replace spaces with underscores
+    return name
 #function to read in the labor statistics data
 def read_labor_stats(filepath):
     #get year from the filepath name
@@ -112,6 +128,12 @@ def read_labor_stats(filepath):
                    , 'tot_emp'])
     df = df.pivot(on = 'occ_title'
                          , index = 'year')
+
+
+    
+    new_columns = [clean_name(col) for col in df.columns]
+
+    df.columns = new_columns
 
     return df
 
@@ -151,16 +173,24 @@ def read_monthly_transport_stats(filepath):
                     , 'U.S. Airline Traffic - Domestic - Non Seasonally Adjusted'
                     , 'U.S. marketing air carriers on-time performance (percent)'])
     
+    new_columns = [clean_name(col) for col in df.columns]
 
+    df.columns = new_columns
     
     return df
 
 def read_proc_monthly_transport_stats(filepath):
     df = pl.read_csv(filepath)
+    new_columns = [clean_name(col) for col in df.columns]
+
+    df.columns = new_columns
     return df
 
 def read_proc_airport_departure_stats(filepath):
     df = pl.read_csv(filepath)
+    
+    new_columns = [clean_name(col) for col in df.columns]
+    df.columns = new_columns
     return df
 
 
@@ -227,17 +257,50 @@ def read_combined_flights_parquet(filepath):
                     &(df['Diverted']==False)\
                     &(~df['ArrDelay'].is_null())
                     &(~df['dep_datetime'].is_null()))
+
+    new_columns = [clean_name(col) for col in df.columns]
+    df.columns = new_columns
+
     return df
+
+# %%
+from datetime import datetime, timedelta
+from dateutil.relativedelta import relativedelta
+
+def shift_date(date_str, days=0, months=0, years=0, date_format="%Y-%m-%d"):
+    """
+    Shifts a given date by the specified number of days, months, and years.
+    
+    :param date_str: The original date as a string (formatted as YYYY-MM-DD by default)
+    :param days: Number of days to shift (positive or negative)
+    :param months: Number of months to shift (positive or negative)
+    :param years: Number of years to shift (positive or negative)
+    :param date_format: Format of the input and output date string
+    :return: Shifted date as a string
+    """
+    original_date = datetime.strptime(date_str, date_format)
+    shifted_date = original_date + relativedelta(days=days, months=months, years=years)
+    return shifted_date.strftime(date_format)
+
 
 # %% [markdown]
 # # 1. Data
+#
+# * Load data for target year and prev, as we may need to associate prev year data to the target (because if not it could induce data leak)
+# * Join at the target year level
 
 # %%
 path_raw = "../../data/"
 path_proc = "../../outputs/proc/"
 
 # %%
-dt_year = 2018
+dt_year = 2019#2020#
+dt_ini = f"{dt_year}-01-01"
+dt_prev = shift_date(dt_ini, years=-1)
+dt_year_prev = dt_prev[:4]
+years = [dt_year_prev, dt_year]
+years
+
 
 # %%
 # Monthly transport stats
@@ -249,11 +312,13 @@ monthly_transport_stats.shape
 
 # %%
 # Yearly labor statistics
-years = [dt_year]
 labor = pl.DataFrame()
 for year in years:
+   # try:
     filepath_labor = f'{path_raw}labor statistics data_'+str(year)+'.xlsx'
-    labor = pl.concat([labor, read_labor_stats(filepath_labor)])
+    labor = pl.concat([labor, read_labor_stats(filepath_labor)], how="diagonal")
+    #except: 
+    #    print(f"Couldn't find data for year {year}")
 
 
 # %%
@@ -279,34 +344,44 @@ master.shape
 
 
 # %%
-# Flights combined
+# Flights combined, # Only use objective year
 filepath_cf = f'{path_raw}Combined_Flights_'+str(dt_year)+'.parquet'
-flight_combined = read_combined_flights_parquet(filepath_cf)
-flight_combined.shape
+df_merge = read_combined_flights_parquet(filepath_cf)
+df_merge.shape
+
+# %%
+df_merge = df_merge.with_columns(
+    pl.concat_str([pl.col("flightdate"),pl.col("crsdeptime"), pl.col("operating_airline"), pl.col("origin"), pl.col("dest")]).alias("unique_key")
+)
+df_merge = df_merge.unique(subset=["unique_key"]) 
+df_merge.shape, df_merge["unique_key"].n_unique()
 
 # %% [markdown]
 # # 2. Processing
 
+# %% [markdown]
+# * Create key for aircraft description using master that contains "tail_number"
+
 # %%
-master_acft = master.join(acftref , left_on = 'MFR MDL CODE' , right_on = 'CODE')
+master_acft = master.join(acftref , left_on = 'MFR_MDL_CODE'.lower() , right_on = 'CODE'.lower())
 master_acft.shape
+
+# %% [markdown]
+# * Combine year stats
 
 # %%
 monthly_transport_stats = monthly_transport_stats.with_columns(pl.col("dt").str.head(4).cast(pl.Int32).alias("year"))
-
-# %%
-labor
 
 # %%
 labor_monthly_transport = monthly_transport_stats.join(labor
                                                       , on = 'year')
 labor_monthly_transport.shape
 
-# %%
-flight_combined.shape
+# %% [markdown]
+# * Add to combined flights the aircraft information
 
 # %%
-df_merge = flight_combined.join(master_acft, left_on = 'Tail_Number', right_on = 'N-NUMBER' , how="left")
+df_merge = df_merge.join(master_acft, left_on = 'Tail_Number'.lower(), right_on = 'nnumber' , how="left")
 
 #combined2 = master_acft.with_columns((pl.lit('N')+pl.col('N-NUMBER')).alias('N-NUMBER'))\
 #                    .join(cf_temp , left_on = 'N-NUMBER' , right_on = 'Tail_Number')
@@ -315,18 +390,40 @@ df_merge = flight_combined.join(master_acft, left_on = 'Tail_Number', right_on =
 df_merge.shape
 
 
-# %%
-df_merge = df_merge.with_columns( year=pl.col("FlightDate").str.slice(0, 4).cast(pl.Int32),
-                         month=pl.col("FlightDate").str.slice(5, 2).cast(pl.Int32))
+# %% [markdown]
+# * Add to combined flights the airport departure information
 
-labor_monthly_transport = labor_monthly_transport.with_columns(month=pl.col("dt").str.slice(5, 2).cast(pl.Int32))
+# %%
+df_merge = df_merge.with_columns( year=pl.col("flightdate").str.slice(0, 4).cast(pl.Int32),
+                         month=pl.col("flightdate").str.slice(5, 2).cast(pl.Int32))
+
+# %%
+airport_departure = airport_departure.with_columns((pl.col("year").cast(pl.Int32)  + 1).alias("year_ref"))
+
+# %%
+df_merge = df_merge.join(airport_departure.drop("year"), left_on=["origin", "year"], right_on=["airport_code","year_ref"], how="left")
+
+# %%
+df_merge.shape
+
+# %% [markdown]
+# * Add to combined flights monthly transport and labor stats 
+
+# %%
+labor_monthly_transport = labor_monthly_transport.with_columns(
+    (pl.col("dt").map_elements(lambda x: shift_date(x, months=1))).alias("dt_ref")
+)
+
+labor_monthly_transport = labor_monthly_transport.with_columns(
+    year_ref=pl.col("dt_ref").str.slice(0, 4).cast(pl.Int32),
+    month_ref=pl.col("dt_ref").str.slice(5, 2).cast(pl.Int32))
 
 # %%
 df_merge = df_merge.join(labor_monthly_transport
                                     , left_on = ['year'
                                                 , 'month']
-                                    , right_on = ['year'
-                                                , 'month'],
+                                    , right_on = ['year_ref'
+                                                , 'month_ref'],
                                     how="left")
 
 
@@ -334,12 +431,18 @@ df_merge = df_merge.join(labor_monthly_transport
 df_merge.shape
 
 # %%
-df_merge["ArrDel15"].mean()
+df_merge["arrdel15"].mean()
 
 # %% [markdown]
 # # Export
 
 # %%
+dt_year
+
+# %%
 df_merge.write_parquet(f"{path_proc}{dt_year}_join_datasets.parquet", compression="snappy")
+
+# %%
+df_merge.columns
 
 # %%
