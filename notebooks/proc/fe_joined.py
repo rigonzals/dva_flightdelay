@@ -44,7 +44,6 @@ path_fe = "../../outputs/fe/"
 
 fe_type = "time" #"stats"#"flight" # 
 
-# %%
 dt_year = 2020
 dt_ini = f"{dt_year}-01-01"
 if fe_type == "time":
@@ -143,7 +142,7 @@ list_cols_use
 # %%
 for col in list_cols_use:
     print(col)
-    path = f'{path_proc}{year}_join_datasets.parquet'
+    path = f'{path_proc}{dt_year}_join_datasets.parquet'
     pl.read_parquet(path, columns=[col])
 
 # %%
@@ -181,23 +180,47 @@ df_joined.shape, df_joined["unique_key"].n_unique()
 #df_joined = df_joined.with_columns(
     #pl.concat_str([pl.col("origin"), pl.lit('-'),pl.col("dest")]).alias("route")
 #)
+df_joined = df_joined.with_columns(pl.col("flightdate").cast(pl.Date).alias("flightdate_obj"))
+df_joined = df_joined.with_columns(pl.col("flightdate_obj").dt.truncate("1mo").alias("month"))
+unique_months = df_joined.filter(pl.col("flightdate").str.contains(dt_year)).select("month").unique().to_series().to_list()
 
-df_lazy = df.lazy()
-# route average delay last 3 months
-rolling_avg = (
-    df_lazy.join(
-        df_lazy.rename({"flightdate": "past_date", "arrdelay": "past_arrdelay"}),
-        on=["origin", "dest"],
-        how="inner"
-    )
-    .filter(
-        (pl.col("past_date") < pl.col("flightdate")) &  # Only past flights
-        (pl.col("past_date") >= pl.col("flightdate") - pl.duration(days=90))  # Within last 3 months
-    )
-    .groupby(["origin", "dest", "flightdate"])
-    .agg(pl.col("past_arrdelay").mean().alias("avg_delay_last_3_months"))
-)
+results = []
+n_days = 30
 
+
+for month in unique_months:
+    
+    df_lazy = df_joined.lazy()
+    start_date = month - timedelta(days=n_days)  # 3 months before the month start
+    end_date = month + timedelta(days=31)  # Include full month
+
+    # Filter only relevant flights (reduce data size before joining)
+    df_current = df_joined.lazy().filter((pl.col("flightdate_obj") >= month) & (pl.col("flightdate_obj") <= end_date))
+    df_past = df_joined.lazy().filter((pl.col("flightdate_obj") >= start_date) & (pl.col("flightdate_obj") < end_date)).rename({"flightdate_obj": "past_date", "arrdelay": "past_arrdelay"})
+
+    
+    rolling_avg = (
+        df_past
+        .join(df_current, on=["origin", "dest"], how="inner")
+        .filter( (pl.col("past_date") <= (pl.col("flightdate_obj") - pl.duration(days=1) ) ) &  # Only past flights
+                 (pl.col("past_date") >= pl.col("flightdate_obj") - pl.duration(days=n_days)))  # Exclude same day
+        .group_by(["origin", "dest", "flightdate"])
+        .agg(pl.col("arrdelay").mean().alias(f"avg_delay_last_{n_days}d"))
+    )
+    
+    # Merge with current month's data
+    df_month_result = df_current.join(rolling_avg, on=["origin", "dest", "flightdate"], how="left").collect()
+    print(month, df_month_result.shape)
+    results.append(df_month_result)
+
+# Combine all months
+df_final = pl.concat(results)
+
+
+# %%
+df_final.shape
+
+# %%
 
 # %%
 
