@@ -455,3 +455,21 @@ df_merge.columns
 # %%
 
 # %%
+
+null_percentages = df_merge.select([
+((pl.col(c).is_null().sum() / df_merge.height) * 100).alias(c + "_null_percentage")
+for c in df_merge.columns
+])
+
+# Sort the null percentages in descending order (highest null percentage first)
+null_percentages_sorted = null_percentages.to_pandas().transpose().sort_values(0, ascending=False)
+
+# %%
+for i in range(null_percentages_sorted.shape[0]):
+    display(null_percentages_sorted.iloc[i])
+
+# %%
+for col in df_merge.columns:
+    print(col)
+
+# %%
