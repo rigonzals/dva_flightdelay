@@ -1,3 +1,19 @@
+# ---
+# jupyter:
+#   jupytext:
+#     cell_metadata_filter: -all
+#     custom_cell_magics: kql
+#     text_representation:
+#       extension: .py
+#       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.11.2
+#   kernelspec:
+#     display_name: genv
+#     language: python
+#     name: python3
+# ---
+
 # %%
 import polars as pl
 
@@ -9,7 +25,7 @@ path_raw = "../../data/"
 path_proc = "../../outputs/proc/"
 path_fe = "../../outputs/fe/"
 
-dt_years = [2019, 2020, 2021]
+dt_years = [2018,2019, 2020, 2021]
 
 # %% [markdown]
 # # 1. Data
@@ -37,7 +53,7 @@ for year in dt_years:
 
 # %% [markdown]
 # ## 2.1 Mode
-# 
+#
 # * Check features which the most common value has a very high %
 
 # %%

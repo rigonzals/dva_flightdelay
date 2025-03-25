@@ -42,9 +42,9 @@ path_raw = "../../data/"
 path_proc = "../../outputs/proc/"
 path_fe = "../../outputs/fe/"
 
-fe_type = "stats"#"flight" # "time" #
+fe_type = "time" #"flight" #"stats"# 
 
-dt_year = 2021
+dt_year = 2018
 dt_ini = f"{dt_year}-01-01"
 if fe_type == "time":
     dt_prev = shift_date(dt_ini, years=-1)
@@ -139,7 +139,7 @@ dic_cols_fe = {
       'airfield_operations_specialists',
       'flight_attendants',
     #  'transportation_attendants_except_flight_attendants',
-      'aircraft_service_attendants_and_transportation_workers_all_other',
+ #     'aircraft_service_attendants_and_transportation_workers_all_other',
     #  "aircraft_service_attendants",
       ]
 }
@@ -297,7 +297,7 @@ elif fe_type == "stats":
       'airfield_operations_specialists',
       'flight_attendants',
     #  'transportation_attendants_except_flight_attendants',
-      'aircraft_service_attendants_and_transportation_workers_all_other',
+   #   'aircraft_service_attendants_and_transportation_workers_all_other',
      # "aircraft_service_attendants"
       ]
         
@@ -334,8 +334,6 @@ elif fe_type == "time":
     print(df_joined.shape, df_joined["unique_key"].n_unique())
 
     df_joined = df_joined.filter(pl.col("flightdate").str.contains(dt_year)).select(["unique_key", "month", "day", "crsdeptime", "avg_delay_route_last_30d", "avg_delay_airline_dest_last_14d"])
-
-    
 
 
 # %% [markdown]
