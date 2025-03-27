@@ -294,7 +294,7 @@ path_raw = "../../data/"
 path_proc = "../../outputs/proc/"
 
 # %%
-dt_year = 2021#2019#2019#2020#
+dt_year = 2020#2019#2019#2020#
 dt_ini = f"{dt_year}-01-01"
 dt_prev = shift_date(dt_ini, years=-1)
 dt_year_prev = dt_prev[:4]
@@ -388,14 +388,15 @@ labor_monthly_transport.shape
 # * Add to combined flights the aircraft information
 
 # %%
-df_merge = df_merge.join(master_acft, left_on = 'Tail_Number'.lower(), right_on = 'nnumber' , how="left")
+df_combine1 = df_merge.select("unique_key", "tail_number").join(master_acft, left_on = 'tail_number', right_on = 'nnumber' , how="inner")
+df_combine2 = df_merge.select("unique_key", "tail_number").join(master_acft.with_columns((pl.lit('N')+pl.col('nnumber')).alias("nnumber")), left_on = 'tail_number', right_on = 'nnumber' , how="inner")
+df_combined = pl.concat([df_combine1, df_combine2]).unique(subset=["unique_key"], keep="first")
+df_combined.shape
 
-#combined2 = master_acft.with_columns((pl.lit('N')+pl.col('N-NUMBER')).alias('N-NUMBER'))\
-#                    .join(cf_temp , left_on = 'N-NUMBER' , right_on = 'Tail_Number')
-#
-#combined = pl.concat([combined1 , combined2])
-df_merge.shape
 
+# %%
+df_merge = df_merge.join(df_combined.drop("tail_number","mfr_mdl_code"), on="unique_key", how="left")
+df_merge.shape, df_merge["unique_key"].n_unique()
 
 # %% [markdown]
 # * Add to combined flights the airport departure information
@@ -411,7 +412,7 @@ airport_departure = airport_departure.with_columns((pl.col("year").cast(pl.Int32
 df_merge = df_merge.join(airport_departure.drop("year"), left_on=["origin", "year"], right_on=["airport_code","year_ref"], how="left")
 
 # %%
-df_merge.shape
+df_merge.shape, df_merge["unique_key"].n_unique()
 
 # %% [markdown]
 # * Add to combined flights monthly transport and labor stats 
@@ -435,7 +436,7 @@ df_merge = df_merge.join(labor_monthly_transport
 
 
 # %%
-df_merge.shape
+df_merge.shape, df_merge["unique_key"].n_unique()
 
 # %%
 df_merge["arrdel15"].mean()
@@ -466,7 +467,8 @@ null_percentages_sorted = null_percentages.to_pandas().transpose().sort_values(0
 
 # %%
 for i in range(null_percentages_sorted.shape[0]):
-    display(null_percentages_sorted.iloc[i])
+    if null_percentages_sorted.iloc[i].values[0] >0:
+        display(null_percentages_sorted.iloc[i])
 
 # %%
 for col in df_merge.columns:
