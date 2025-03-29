@@ -7,3 +7,6 @@ Create the virtual environment by running the following:
 - Activate the env: `source flight_pred/bin/activate`
 - Install the requirements: `pip install -r requirements.txt` from the folder frontend
 
+
+running it from command line
+`streamlit run streamlit_app.py`
