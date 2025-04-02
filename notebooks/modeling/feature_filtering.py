@@ -37,17 +37,19 @@ for year in dt_years:
     df_fe = pl.read_parquet(f"{path_fe}{year}_fe_time.parquet")
     print(df_fe.shape)
 
-    df_fe = pl.concat([df_fe,  pl.read_parquet(f"{path_fe}{year}_fe_stats.parquet").drop("unique_key")], how="horizontal")
+    #df_fe = pl.concat([df_fe,  pl.read_parquet(f"{path_fe}{year}_fe_stats.parquet").drop("unique_key")], how="horizontal")
+    df_fe = df_fe.join(pl.read_parquet(f"{path_fe}{year}_fe_stats.parquet"), on="unique_key")
     print(df_fe.shape)
 
-    df_fe = pl.concat([df_fe,  pl.read_parquet(f"{path_fe}{year}_fe_flight.parquet").drop("unique_key")], how="horizontal")
-    print(df_fe.shape)
+    #df_fe = pl.concat([df_fe,  pl.read_parquet(f"{path_fe}{year}_fe_flight.parquet").drop("unique_key")], how="horizontal")
+    df_fe = df_fe.join(pl.read_parquet(f"{path_fe}{year}_fe_flight.parquet"), on="unique_key")
+    print(df_fe.shape)  
 
-    df_fe = pl.concat([df_fe,  pl.read_parquet(f'{path_proc}{year}_join_datasets.parquet', columns=["arrdelay"])], how="horizontal")
+    #df_fe = pl.concat([df_fe,  pl.read_parquet(f'{path_proc}{year}_join_datasets.parquet', columns=["arrdelay"])], how="horizontal")
+    df_fe = df_fe.join(pl.read_parquet(f"{path_proc}{year}_join_datasets.parquet", columns=["unique_key","arrdelay"]), on="unique_key")
     print(df_fe.shape)
    # try:
     df_fe_joined = pl.concat([df_fe_joined, df_fe], how="diagonal")
-
 # %% [markdown]
 # # 2. Filter
 
@@ -109,9 +111,17 @@ df_fe.shape
 df_fe.write_parquet(f"{path_fe}all_joined_fe_delta_years={len(dt_years)}.parquet", compression="snappy")
 
 # %%
+f"{path_fe}all_joined_fe_delta_years={len(dt_years)}.parquet"
 
 
 # %%
+df_fe.columns[:30]
 
 
+# %%
+df_fe.columns[30:]
 
+# %%
+df_fe.columns[50:]
+
+# %%
