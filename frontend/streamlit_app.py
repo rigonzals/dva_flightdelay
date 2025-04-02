@@ -8,6 +8,7 @@ import pandas as pd
 import pydeck as pdk
 import datetime
 import numpy as np
+import pickle
 
 # these are all hard coded and will be replated with stuff from the models
 prediction = "A little Late"
@@ -15,12 +16,18 @@ on_time_chance = 15
 a_little_late_chance=65
 really_late_chance = 100-a_little_late_chance-on_time_chance
 reason_list = ['reason_1','reason_2','reason_3']
-dest_airport_code = 'ATL'
-origin_airport_code = 'JFK'
 
 # Data!
 tool_tip_data_df = pd.read_csv('tooltip_data.csv')
 flight_list_data = pd.read_csv("flight_list.csv")
+
+# Pickles!
+with open('gradient_boost_model.pkl','rb') as file:
+    model = pickle.load(file)
+
+# what are the attributes?
+if hasattr(model, 'feature_names_in_'):
+    print('features', model.feature_names_in_)
 
 # filter the data to just the united states
 tool_tip_data_df = tool_tip_data_df[tool_tip_data_df['AIRPORT_COUNTRY_NAME']=='United States']
@@ -94,7 +101,7 @@ with col1:
             data=st.session_state.route_data,
             get_source_position="[from_lon, from_lat]",
             get_target_position="[to_lon, to_lat]",
-            get_color=[255, 0, 0],  # Red line
+            get_color=[0, 0, 0],
             get_width=5
         )
         map_layers.append(line_layer)
