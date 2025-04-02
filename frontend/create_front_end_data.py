@@ -52,5 +52,5 @@ location_data.to_csv('frontend/tooltip_data.csv')
 
 # get the list of all of the flights
 df_combo['flight_number'] = df_combo['operating_airline'].astype(str) + ' ' + df_combo['flight_number_marketing_airline'].astype(str)
-all_flights = df_combo[['flight_number']].drop_duplicates()
+all_flights = df_combo[['flight_number','origin','dest']].drop_duplicates()
 all_flights.to_csv('frontend/flight_list.csv')

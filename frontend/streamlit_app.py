@@ -9,15 +9,24 @@ import pydeck as pdk
 import datetime
 import numpy as np
 
+# these are all hard coded and will be replated with stuff from the models
+prediction = "A little Late"
+on_time_chance = 15
+a_little_late_chance=65
+really_late_chance = 100-a_little_late_chance-on_time_chance
+reason_list = ['reason_1','reason_2','reason_3']
+dest_airport_code = 'ATL'
+origin_airport_code = 'JFK'
+
 # Data!
-df = pd.read_csv('tooltip_data.csv')
+tool_tip_data_df = pd.read_csv('tooltip_data.csv')
 flight_list_data = pd.read_csv("flight_list.csv")
 
 # filter the data to just the united states
-df = df[df['AIRPORT_COUNTRY_NAME']=='United States']
+tool_tip_data_df = tool_tip_data_df[tool_tip_data_df['AIRPORT_COUNTRY_NAME']=='United States']
 
 # filtering out the airports in the territories and non-continental us
-df = df[(~df['AIRPORT_STATE_NAME'].isin([
+tool_tip_data_df = tool_tip_data_df[(~tool_tip_data_df['AIRPORT_STATE_NAME'].isin([
     'U.S. Pacific Trust Territories and Possessions',
     'U.S. Virgin Islands',
     'Puerto Rico',
@@ -25,15 +34,8 @@ df = df[(~df['AIRPORT_STATE_NAME'].isin([
     'Hawaii'
     ]))]
 
-
-
 # filter out closed airporst
-df = df[df['AIRPORT_IS_CLOSED']==0]
-
-# filter to just the top 50 airports - THIS SHOULD PROBABLY BE REMOVED LATER?
-# top_50 = df.sample(n=50)
-# df = df[df['AIRPORT'].isin(top_50['AIRPORT'].values) | (df['DISPLAY_AIRPORT_NAME'].isin(['Hartsfield-Jackson Atlanta International']))]
-
+tool_tip_data_df = tool_tip_data_df[tool_tip_data_df['AIRPORT_IS_CLOSED']==0]
 
 # Enable wide layout
 st.set_page_config(layout="wide")
@@ -43,10 +45,9 @@ st.set_page_config(layout="wide")
 if "search_clicked" not in st.session_state:
     st.session_state.search_clicked = False
 
-
 # calculate the center of the map
-mid_lat = df['LATITUDE'].mean()
-mid_long = df['LONGITUDE'].mean()
+mid_lat = tool_tip_data_df['LATITUDE'].mean()
+mid_long = tool_tip_data_df['LONGITUDE'].mean()
 
 # define the tooltip
 tooltip = {
@@ -63,7 +64,9 @@ tooltip = {
 }
 
 # get the airport code lists for later
-flight_list = list(flight_list_data['flight_number'])
+flight_list = list(set(flight_list_data['flight_number']))
+flight_list.sort()
+
 
 # create columns to represent the width of the screen.
 col1, col2 = st.columns([3,2])
@@ -72,7 +75,30 @@ col1, col2 = st.columns([3,2])
 with col1:
     st.container()
 
-    # st.map(df[["LATITUDE","LONGITUDE"]].dropna())
+    # create the map
+    map_layers = [
+        pdk.Layer(
+            "ScatterplotLayer",
+            data=tool_tip_data_df,
+            get_position=["LONGITUDE", "LATITUDE"],
+            get_color=[0, 0, 255, 160],
+            get_radius=25000,
+            pickable=True
+        )
+    ]
+    # Add the line layer if the search has been clicked
+    if st.session_state.get("search_clicked", False) and "route_data" in st.session_state:
+        print('session state trigger', 92)
+        line_layer = pdk.Layer(
+            "LineLayer",
+            data=st.session_state.route_data,
+            get_source_position="[from_lon, from_lat]",
+            get_target_position="[to_lon, to_lat]",
+            get_color=[255, 0, 0],  # Red line
+            get_width=5
+        )
+        map_layers.append(line_layer)
+
     st.pydeck_chart(pdk.Deck(
         map_style = "mapbox://styles/mapbox/light-v9",
         initial_view_state= pdk.ViewState(
@@ -81,16 +107,7 @@ with col1:
             zoom=3,
             pitch=0
         ),
-        layers=[
-            pdk.Layer(
-                "ScatterplotLayer",
-                data=df,
-                get_position=["LONGITUDE","LATITUDE"],
-                get_color=[0, 0, 255, 160],
-                get_radius=25000,
-                pickable=True
-            )
-        ],
+        layers=map_layers,
         tooltip=tooltip
     ))
 
@@ -103,7 +120,6 @@ with col2:
 
     # top right part which is for the search
     with st.expander("Search",expanded=True):
-
         flight_date = st.date_input("Flight date", datetime.date.today())
         flight_start_location = st.selectbox(
             "Flight Number",
@@ -114,19 +130,39 @@ with col2:
         search_button = st.button("Search")
         if search_button:
             st.session_state.search_clicked = True
+            st.session_state.selected_flight = flight_start_location
 
-    if search_button:
+            # get the flight information and route to show on the map
+            selected_flight = flight_start_location
+            print('selected_flight',selected_flight)
+            searched_flight_data = flight_list_data[flight_list_data['flight_number'] == selected_flight]
+            origin_airport_code = searched_flight_data['origin'].values[-1]
+            dest_airport_code = searched_flight_data['dest'].values[-1]
 
+            origin_airport = tool_tip_data_df[tool_tip_data_df['AIRPORT'] == origin_airport_code].iloc[0]
+            dest_airport = tool_tip_data_df[tool_tip_data_df['AIRPORT'] == dest_airport_code].iloc[0]
+
+            route_data = pd.DataFrame([{
+                "from_lon": origin_airport["LONGITUDE"],
+                "from_lat": origin_airport["LATITUDE"],
+                "to_lon": dest_airport["LONGITUDE"],
+                "to_lat": dest_airport["LATITUDE"]
+            }])
+            st.session_state.route_data = route_data
+
+
+    # if seach button is clicked, then we will show the results sections and the line on the map
+    if st.session_state.get("search_clicked", False) and "route_data" in st.session_state:
         # bottom right part for the results
         with st.expander("Results",expanded=True):
-            # these are all hard coded and will be replated with stuff from the models
-            prediction = "A little Late"
-            color = 'orange'
-            on_time_chance = 15
-            a_little_late_chance=65
-            really_late_chance = 100-a_little_late_chance-on_time_chance
-            reason_list = ['reason_1','reason_2','reason_3']
 
+            # lookup the correct color based on the prediction
+            prediction = 'Very late'
+            RESULTS_COLOR = 'LightGreen'
+            if prediction == 'A little Late':
+                RESULTS_COLOR = 'LemonChiffon'
+            elif prediction == 'Very late':
+                RESULTS_COLOR = 'Salmon'
 
             st.markdown(f"""
                 <style>
@@ -143,7 +179,7 @@ with col2:
                     text-align: center;
                     font-size: 20px;
                     color: #333;
-                    background-color: {color};
+                    background-color: {RESULTS_COLOR};
                     transition: background-color 0.3s ease;
                     width: fit-content;
                     display: inline-block;
@@ -211,6 +247,7 @@ with col2:
                     .reason-wrapper {{
                         text-align: center;
                         position: relative;
+                        margin-bottom: 24px;
                     }}
 
                     .reason-box {{
@@ -240,3 +277,5 @@ with col2:
                         </div>
                     </div>
                     """, unsafe_allow_html=True)
+
+            st.rerun()
