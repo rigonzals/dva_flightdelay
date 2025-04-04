@@ -59,7 +59,12 @@ def draw_map(tool_tip_data_df, mid_lat, mid_long):
 
 
 def handle_search(flight_list_data, tool_tip_data_df, flight_list):
-    flight_date = st.date_input("Flight date", datetime.date.today())
+    today = datetime.date.today()
+    max_date = today + datetime.timedelta(days=90)
+    flight_date = st.date_input(
+        "Flight date",
+        datetime.date.today(),
+        max_value=max_date)
     flight_start_location = st.selectbox(
         "Flight Number",
         flight_list,
