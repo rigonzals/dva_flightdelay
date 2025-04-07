@@ -106,7 +106,6 @@ def show_results():
     on_time_chance = st.session_state.on_time_chance
     really_late_chance = st.session_state.really_late_chance
     a_little_late_chance = st.session_state.a_little_late_chance
-    reason_list = st.session_state.reason_list
     # lookup the correct color based on the prediction
     RESULTS_COLOR = 'LightGreen'
     if prediction == 'A little Late':
@@ -180,50 +179,26 @@ def show_results():
         </div>
         """, unsafe_allow_html=True)
 
-    # add in the section for the reasons
-    # make the columns for the search area
-    col_list = st.columns(np.ones(len(reason_list)))
-    counter = 0
-    for col in col_list:
-        loop_reason = reason_list[counter]
-        counter = counter + 1
+def add_header():
+    st.image("logo_with_text.png", width=400)
 
-        with col:
-            st.container()
+def add_footer():
 
-            # add in the box
-            st.markdown(f"""
-            <style>
-            .reason-wrapper {{
-                text-align: center;
-                position: relative;
-                margin-bottom: 24px;
-            }}
+    footer_images = ["gatech_logo.png",
+                     "clouds_only.png",
+                     "clouds_only.png",
+                     "clouds_only.png",
+                     "clouds_only.png",
+                     "clouds_only.png",
+                     "clouds_only.png",
+                     "clouds_only.png"]
 
-            .reason-box {{
-                border: 2px solid #ccc;
-                # border-radius: 12px;
-                # padding: 16px;
-                text-align: center;
-                # font-size: 20px;
-                # color: #333;
-                # transition: background-color 0.3s ease;
-                # width: fit-content;
-                # display: inline-block;
-                # margin: 0 auto;
-                # position: relative;
-            }}
+    width_list = [80,250,250,250,250,250,250,250]
 
+    with st.container():
+        cols = st.columns(len(footer_images))  # Create columns based on number of images
 
-            .prediction-box:hover .tooltip-text {{
-                visibility: visible;
-                opacity: 1;
-            }}
-            </style>
-
-            <div class="reason-wrapper">
-                <div class="reason-box">
-                    <strong>{loop_reason}</strong>
-                </div>
-            </div>
-            """, unsafe_allow_html=True)
+        for idx, col in enumerate(cols):
+            w = width_list[idx]
+            with col:
+                st.image(footer_images[idx], width=w)  # Adjust the width as needed

@@ -7,14 +7,18 @@ import streamlit as st
 import pandas as pd
 
 # import model_things
-from helper_functions import draw_map, handle_search, show_results
+from helper_functions import draw_map, handle_search, show_results, add_footer,add_header
+st.set_page_config(layout="wide", page_title="Flight Prediction App", page_icon="✈️")
+
+
+# Add the header and footer
+add_header()
 
 # these are all hard coded and will be replated with stuff from the models
 st.session_state.prediction = 'A little Late'
 st.session_state.on_time_chance = 15
 st.session_state.a_little_late_chance = 65
 st.session_state.really_late_chance = 100-st.session_state.a_little_late_chance -st.session_state.on_time_chance
-st.session_state.reason_list = ['reason_1','reason_2','reason_3']
 
 # Data!
 tool_tip_data_df = pd.read_csv('tooltip_data.csv')
@@ -34,9 +38,6 @@ tool_tip_data_df = tool_tip_data_df[(~tool_tip_data_df['AIRPORT_STATE_NAME'].isi
 
 # filter out closed airporst
 tool_tip_data_df = tool_tip_data_df[tool_tip_data_df['AIRPORT_IS_CLOSED']==0]
-
-# Enable wide layout
-st.set_page_config(layout="wide")
 
 # search clicked
 if "search_clicked" not in st.session_state:
@@ -89,3 +90,4 @@ with col2:
 
             # force the screen to refresh so the line shows
             st.rerun()
+add_footer()
