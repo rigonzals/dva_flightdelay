@@ -3,9 +3,12 @@
 import pydeck as pdk
 import streamlit as st
 import pandas as pd
-import numpy as np
 import datetime
-import model_things
+import requests
+import ast
+import altair as alt
+
+
 
 def draw_map(tool_tip_data_df, mid_lat, mid_long):
     map_layers = [
@@ -13,14 +16,13 @@ def draw_map(tool_tip_data_df, mid_lat, mid_long):
             "ScatterplotLayer",
             data=tool_tip_data_df,
             get_position=["LONGITUDE", "LATITUDE"],
-            get_color=[0, 0, 255, 160],
+            get_color=[64, 89, 168, 160],
             get_radius=25000,
             pickable=True
         )
     ]
     # Add the line layer if the search has been clicked
     if st.session_state.get("search_clicked", False) and "route_data" in st.session_state:
-        print('session state trigger', 92)
         line_layer = pdk.Layer(
             "LineLayer",
             data=st.session_state.route_data,
@@ -40,7 +42,7 @@ def draw_map(tool_tip_data_df, mid_lat, mid_long):
                 "<b>Late %:</b> {late_prob}<br>"
                 "<b>Average Arrival Delay:</b> {arrdelay_mean}",
         "style": {
-            "backgroundColor": "steelblue",
+            "backgroundColor": "#4059A8",
             "color": "white"
         }
     }
@@ -78,7 +80,6 @@ def handle_search(flight_list_data, tool_tip_data_df, flight_list):
 
         # get the flight information and route to show on the map
         selected_flight = flight_start_location
-        print('selected_flight',selected_flight)
         searched_flight_data = flight_list_data[flight_list_data['flight_number'] == selected_flight]
         origin_airport_code = searched_flight_data['origin'].values[-1]
         dest_airport_code = searched_flight_data['dest'].values[-1]
@@ -93,91 +94,66 @@ def handle_search(flight_list_data, tool_tip_data_df, flight_list):
             "to_lat": dest_airport["LATITUDE"]
         }])
         st.session_state.route_data = route_data
+        # reload the screen
+        st.rerun()
+    elif st.session_state.get("search_clicked", False) and "route_data" not in st.session_state:
+        st.session_state.search_clicked = False
 
-        # call the model
-        model = model_things.load_model()
-        model_inputs = model_things.get_model_inputs(flight_number = selected_flight)
-        model_prediction = model_things.get_prediction(model, model_inputs)
+def get_prediction():
+    """call the model and save it to the state"""
+    model_results = requests.get("http://localhost:5000/")
+    model_results_dict = ast.literal_eval(model_results.text)
+    st.session_state.prediction = model_results_dict['prediction']
+    st.session_state.on_time_chance = model_results_dict['on_time_chance']
+    st.session_state.really_late_chance = model_results_dict['really_late_chance']
+    st.session_state.a_little_late_chance = model_results_dict['a_little_late_chance']
+
+
+def tooltip(text, tip):
+    return f'{text} <span title="{tip}">ℹ️</span>'
 
 
 def show_results():
     # get values from the session state
+    get_prediction()
     prediction= st.session_state.prediction
     on_time_chance = st.session_state.on_time_chance
     really_late_chance = st.session_state.really_late_chance
     a_little_late_chance = st.session_state.a_little_late_chance
     # lookup the correct color based on the prediction
     RESULTS_COLOR = 'LightGreen'
+    image_path = 'ontime.png'
+
     if prediction == 'A little Late':
         RESULTS_COLOR = 'LemonChiffon'
+        image_path = 'late.png'
     elif prediction == 'Very late':
         RESULTS_COLOR = 'Salmon'
+        image_path = 'very_late.png'
 
-    st.markdown(f"""
-        <style>
-        .prediction-wrapper {{
-            text-align: center;
-            position: relative;
-            margin-bottom: 24px;
-        }}
+    results_col1, results_col2 = st.columns([2,1])
+    with results_col1:
+        # Sample data
+        data = pd.DataFrame({
+            'Labels': ['On Time', 'Late', 'Very Late'],
+            'Chance': [on_time_chance, really_late_chance, a_little_late_chance]
+        })
+        data = data.sort_values(by='Chance', ascending=False)
 
-        .prediction-box {{
-            border: 2px solid #ccc;
-            border-radius: 12px;
-            padding: 16px;
-            text-align: center;
-            font-size: 20px;
-            color: #333;
-            background-color: {RESULTS_COLOR};
-            transition: background-color 0.3s ease;
-            width: fit-content;
-            display: inline-block;
-            margin: 0 auto;
-            position: relative;
-        }}
+        # data.sort_values('Chance',inplace=True)
+        chart = alt.Chart(data).mark_bar(color='#4059A8').encode(
+            y=alt.Y('Labels', title=''),
+            x='Chance',
 
-        .prediction-box:hover {{
-            background-color: #e0f0ff;
-            cursor: pointer;
-        }}
+        ).properties(
+            width=600,
+            height=150
+        )
 
-        .tooltip-text {{
-            visibility: hidden;
-            background-color: #555;
-            color: #fff;
-            text-align: center;
-            border-radius: 6px;
-            padding: 5px;
-            position: absolute;
-            z-index: 1;
-            bottom: 125%;
-            left: 50%;
-            transform: translateX(-50%);
-            opacity: 0;
-            transition: opacity 0.3s;
-            width: max-content;
-            max-width: 200px;
-            width: max-content;
-            max-width: 320px;
-        }}
+        st.altair_chart(chart, use_container_width=True)
+    with results_col2:
+        st.image(image_path)
 
-        .prediction-box:hover .tooltip-text {{
-            visibility: visible;
-            opacity: 1;
-        }}
-        </style>
-
-        <div class="prediction-wrapper">
-            <div class="prediction-box">
-                <div class="tooltip-text">
-                    Chance of being on time: {on_time_chance}%<br>
-                    Chance of being a little late: {a_little_late_chance}%<br>
-                    Chance of being very late: {really_late_chance}%
-                </div>
-                <strong>{prediction}</strong>
-            </div>
-        </div>
-        """, unsafe_allow_html=True)
 
 def add_header():
     st.image("logo_with_text.png", width=400)

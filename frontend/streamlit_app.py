@@ -87,7 +87,7 @@ with col2:
         with st.expander("Results",expanded=True):
             # show the results section
             show_results()
+            st.session_state.search_clicked = False
 
-            # force the screen to refresh so the line shows
-            st.rerun()
+
 add_footer()
