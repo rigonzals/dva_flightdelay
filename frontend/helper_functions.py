@@ -169,7 +169,7 @@ def add_footer():
                      "clouds_only.png",
                      "clouds_only.png"]
 
-    width_list = [80,250,250,250,250,250,250,250]
+    width_list = [50,250,250,250,250,250,250,250]
 
     with st.container():
         cols = st.columns(len(footer_images))  # Create columns based on number of images
