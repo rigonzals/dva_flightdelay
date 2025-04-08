@@ -25,10 +25,10 @@ def get_prediction(model=model, model_inputs={}):
 
     # call the model
     return {
-        'prediction':'On Time',
-        'on_time_chance':85,
-        'a_little_late_chance':10,
-        'really_late_chance':5
+        'prediction':'Very late',
+        'on_time_chance':15,
+        'a_little_late_chance':25,
+        'really_late_chance':100-15-25
     }
 
 if __name__ == '__main__':

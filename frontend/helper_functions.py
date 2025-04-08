@@ -121,14 +121,11 @@ def show_results():
     really_late_chance = st.session_state.really_late_chance
     a_little_late_chance = st.session_state.a_little_late_chance
     # lookup the correct color based on the prediction
-    RESULTS_COLOR = 'LightGreen'
     image_path = 'ontime.png'
 
     if prediction == 'A little Late':
-        RESULTS_COLOR = 'LemonChiffon'
         image_path = 'late.png'
     elif prediction == 'Very late':
-        RESULTS_COLOR = 'Salmon'
         image_path = 'very_late.png'
 
     results_col1, results_col2 = st.columns([2,1])
@@ -136,7 +133,8 @@ def show_results():
         # Sample data
         data = pd.DataFrame({
             'Labels': ['On Time', 'Late', 'Very Late'],
-            'Chance': [on_time_chance, really_late_chance, a_little_late_chance]
+            'Chance': [on_time_chance, a_little_late_chance, really_late_chance],
+            'ToolTip':['<15 min late','15-45 min late','45+ min late']
         })
         data = data.sort_values(by='Chance', ascending=False)
 
@@ -144,7 +142,7 @@ def show_results():
         chart = alt.Chart(data).mark_bar(color='#4059A8').encode(
             y=alt.Y('Labels', title=''),
             x='Chance',
-
+            tooltip=['Labels', 'Chance', 'ToolTip']
         ).properties(
             width=600,
             height=150
