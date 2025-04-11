@@ -186,7 +186,7 @@ df_joined.shape, df_joined["unique_key"].n_unique()
 # # 2. Processing
 
 # %%
-def agg_timedelta_features(df_joined, cols_agg, feature_name, n_days, metric_agg):
+def agg_timedelta_features(df_joined, cols_agg, feature_name, n_days, n_days_from_event, metric_agg):
     """ 
     Create time agg features
     """
@@ -197,8 +197,9 @@ def agg_timedelta_features(df_joined, cols_agg, feature_name, n_days, metric_agg
 
     for month in unique_months:
         
-        start_date = month - timedelta(days=n_days)  # 3 months before the month start
+        start_date = month - timedelta(days=n_days + n_days_from_event)  # 3 months before the month start
         end_date = month + timedelta(days=31)  # Include full month
+        end_date = month - timedelta(days=31)  # Include full month
 
         # Filter only relevant flights (reduce data size before joining)
         df_current = df_joined.lazy().filter((pl.col("flightdate_obj") >= month) & (pl.col("flightdate_obj") <= end_date))
@@ -208,8 +209,8 @@ def agg_timedelta_features(df_joined, cols_agg, feature_name, n_days, metric_agg
         rolling_avg = (
             df_past.select(cols_agg + ["past_arrdelay", "past_date"])
             .join(df_current.select(cols_agg + ["flightdate_obj"]), on=cols_agg, how="inner")
-            .filter( (pl.col("past_date") <= (pl.col("flightdate_obj") - pl.duration(days=1) ) ) &  # Only past flights
-                    (pl.col("past_date") >= (pl.col("flightdate_obj") - pl.duration(days=n_days) ) ) )  # Exclude same day
+            .filter( (pl.col("past_date") <= (pl.col("flightdate_obj") - pl.duration(days=1 + n_days_from_event) ) ) &  # Only past flights
+                    (pl.col("past_date") >= (pl.col("flightdate_obj") - pl.duration(days=n_days + n_days_from_event) ) ) )  # Exclude same day
             .group_by(cols_agg + ["flightdate_obj"])
             #.agg(pl.col("past_arrdelay").mean().alias(f"{feature_name}_last_{n_days}d"))
             .agg(metric_agg.alias(f"{feature_name}_last_{n_days}d"))
@@ -315,13 +316,13 @@ elif fe_type == "time":
     df_joined = df_joined.with_columns(pl.col("flightdate_obj").dt.truncate("1mo").alias("month"))
 
     # average route delay last month
-    df_fe =  agg_timedelta_features(df_joined, cols_agg=["origin","dest"], feature_name="avg_delay_route", n_days=30, metric_agg=pl.col("past_arrdelay").mean())
+    df_fe =  agg_timedelta_features(df_joined, cols_agg=["origin","dest"], feature_name="avg_delay_route", n_days=30, n_days_from_event=90, metric_agg=pl.col("past_arrdelay").mean())
 
     df_joined = df_joined.join(df_fe, on=["origin","dest","flightdate_obj"], how="left")
 
 
     # average airline_dest  delay last 14days
-    df_fe =  agg_timedelta_features(df_joined, cols_agg=["airline", "dest"], feature_name="avg_delay_airline_dest", n_days=14, metric_agg=pl.col("past_arrdelay").mean())
+    df_fe =  agg_timedelta_features(df_joined, cols_agg=["airline", "dest"], feature_name="avg_delay_airline_dest", n_days=14, n_days_from_event=90, metric_agg=pl.col("past_arrdelay").mean())
 
 
     df_joined = df_joined.join(df_fe, on=["airline","dest","flightdate_obj"], how="left")
@@ -364,3 +365,20 @@ null_percentages_sorted = null_percentages.to_pandas().transpose().sort_values(0
 #display(null_percentages_sorted.iloc[:20])
 #display(null_percentages_sorted.iloc[20:40])
 display(null_percentages_sorted.iloc[0:30])
+
+# %%
+df_joined = df_joined.with_columns((pl.col("origin") == "ID").cast(pl.Int8()).alias("count_id_flag"))
+df_joined["count_id_flag"].sum()
+
+# %%
+df_joined = df_joined.with_columns((pl.col("origin") == "CT").cast(pl.Int8()).alias("count_id_flag"))
+df_joined["count_id_flag"].sum()    
+
+# %%
+df_joined = df_joined.with_columns((pl.col("origin") == "NY").cast(pl.Int8()).alias("count_id_flag"))
+df_joined["count_id_flag"].sum()    
+
+# %%
+df_joined
+
+# %%
