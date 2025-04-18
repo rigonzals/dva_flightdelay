@@ -151,9 +151,9 @@ def show_results():
     # lookup the correct color based on the prediction
     image_path = 'ontime.png'
 
-    if prediction == 'A little Late':
+    if prediction == 'Late':
         image_path = 'late.png'
-    elif prediction == 'Very late':
+    elif prediction == 'Very Late':
         image_path = 'very_late.png'
 
     results_col1, results_col2 = st.columns([2,1])

@@ -48,12 +48,10 @@ def get_prediction(
         'hour': hour,
         'DayShort': day_short
     }])
-    print(flight_features)
 
     # loop up the date holiday info
     date_dimensions_in['Date'] = pd.to_datetime(date_dimensions_in['Date'])
     date_dims_filtered = date_dimensions_in[date_dimensions_in['Date']==flight_date]
-    print('date_dims_filtered columns',list(date_dims_filtered.columns))
 
     # loop up the other flight info
     flight_info = lookup_flight_data_in[
@@ -65,12 +63,6 @@ def get_prediction(
     flight_info.drop(columns=[
         'DayShort','isUSA_Holiday','isUSA_Workingday','isLongweekend','MonthPart','DatePart','YearPart','FirstDayofMonth'],
         inplace=True)
-
-
-    print()
-    print('flight_info_columns')
-    print(list(flight_info.columns))
-
 
     # combine all the things
     date_dims_filtered = date_dims_filtered.reset_index(drop=True)
@@ -85,68 +77,38 @@ def get_prediction(
                                             , 'hour'
                                             , 'DayShort'])
 
-    # combined_features['kep'] = 1
-    # dummy_model_features = pd.DataFrame(columns=model.feature_names_in_)
+    # get the original model columns for comparison
     model_columns_data = pd.read_csv('data_for_columns.csv')
-    # combo = pd.concat([combined_features,model_columns_data])
-    # combo = combo[model_columns_data.columns]
-    print('')
-    print('model_columns_data', len(model_columns_data.columns), len(set(model_columns_data.columns)))
-    print('combined_features', len(combined_features.columns), len(set(combined_features.columns)))
 
     # check for missing columns
-    # current_columns = model_in.feature_names_in_
-    # missing_columns = set(current_columns).difference(combined_features.columns)
-    # missing_columns = set(combined_features.columns).difference(model_in.feature_names_in_)
     combined_features = combined_features.loc[:, ~combined_features.T.duplicated()]
     missing_columns = [x for x in model_columns_data.columns if x not in combined_features.columns]
     missing_columns = list(missing_columns)
     missing_columns.sort()
     for col in missing_columns:
         combined_features[col] = False
-    print('missing_columns added',missing_columns)
-
-    # missing_columns = [x for x in model_in.feature_names_in_ if x not in combined_features.columns]
-    # missing_columns = list(missing_columns)
-    # missing_columns.sort()
-
-    # print('missing_columns after',missing_columns)
-    # print('verison',sklearn.__version__)
 
 
-    # combined_features = combined_features[model_in.feature_names_in_]
-    # print(list(combined_features.columns))
-#     - Date
-# - DatePart
-# - FirstDayofMonth
-# - MonthPart
-# - YearPart
-    # combined_features.drop(columns=[
-    #     'Date','DatePart','FirstDayofMonth','MonthPart','YearPart',
-    #     'airline','arrdelay','crsdeptime','date','destination',
-    #     'month_2021-12-01','month_4','origin','unique_key'
-    #     ],inplace=True)
     combined_features = combined_features[list(model_columns_data.columns)]
-    print('combined_features end', len(combined_features.columns), len(set(combined_features.columns)))
     col_names = list(combined_features.columns)
     col_names.sort()
-    print('duplicate_column check',col_names)
-    # print([x for x in combined_features.columns if '.1' in x])
-    # print(combined_features[['month_4','month_5']].head())
-    print()
 
     combined_features.to_csv('combined_features.csv')
 
 
     # call the model
     predicted_res = model_in.predict(combined_features)
-    print('predicted_res',predicted_res)
+    predict_proba_res= model_in.predict_proba(combined_features)
+
+    late_prob = int(predict_proba_res[0][0]*100)
+    on_time_prob = int(predict_proba_res[0][1]*100)
+    very_late_prob = int(predict_proba_res[0][2]*100)
 
     return {
-        'prediction':'Very late',
-        'on_time_chance':15,
-        'a_little_late_chance':25,
-        'really_late_chance':100-15-25
+        'prediction':predicted_res[0],
+        'on_time_chance':on_time_prob,
+        'a_little_late_chance':late_prob,
+        'really_late_chance':very_late_prob
     }
 
 if __name__ == '__main__':
