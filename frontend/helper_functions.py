@@ -63,10 +63,16 @@ def draw_map(tool_tip_data_df, mid_lat, mid_long):
 def handle_search(flight_list_data, tool_tip_data_df, flight_list):
     today = datetime.date.today()
     max_date = today + datetime.timedelta(days=90)
-    flight_date = st.date_input(
-        "Flight date",
-        datetime.date.today(),
-        max_value=max_date)
+    col1, col2 = st.columns(2)
+    with col1:
+        flight_date = st.date_input(
+            "Flight date",
+            datetime.date.today(),
+            max_value=max_date)
+    with col2:
+        flight_time = st.time_input(
+            "Flight time",
+            datetime.time(9, 0))
     flight_start_location = st.selectbox(
         "Flight Number",
         flight_list,
@@ -77,6 +83,10 @@ def handle_search(flight_list_data, tool_tip_data_df, flight_list):
     if search_button:
         st.session_state.search_clicked = True
         st.session_state.selected_flight = flight_start_location
+        st.session_state.flight_date = flight_date
+        st.session_state.flight_time = flight_time
+        st.session_state.airline = flight_start_location.split(' ')[0]
+
 
         # get the flight information and route to show on the map
         selected_flight = flight_start_location
@@ -86,6 +96,9 @@ def handle_search(flight_list_data, tool_tip_data_df, flight_list):
 
         origin_airport = tool_tip_data_df[tool_tip_data_df['AIRPORT'] == origin_airport_code].iloc[0]
         dest_airport = tool_tip_data_df[tool_tip_data_df['AIRPORT'] == dest_airport_code].iloc[0]
+
+        st.session_state.origin_airport_code = origin_airport_code
+        st.session_state.destination_airport_code = dest_airport_code
 
         route_data = pd.DataFrame([{
             "from_lon": origin_airport["LONGITUDE"],
@@ -99,9 +112,18 @@ def handle_search(flight_list_data, tool_tip_data_df, flight_list):
     elif st.session_state.get("search_clicked", False) and "route_data" not in st.session_state:
         st.session_state.search_clicked = False
 
-def get_prediction():
+def get_prediction(flight_date, flight_time, airline_code, origin, destination):
     """call the model and save it to the state"""
-    model_results = requests.get("http://localhost:5000/")
+    model_results = requests.get(
+        "http://localhost:5000/",
+        params={
+        "airline_code":airline_code,
+        "flight_date": flight_date,
+        "flight_time": flight_time,
+        "airline":airline_code,
+        "origin": origin,
+        "destination": destination,
+    },timeout = 600)
     model_results_dict = ast.literal_eval(model_results.text)
     st.session_state.prediction = model_results_dict['prediction']
     st.session_state.on_time_chance = model_results_dict['on_time_chance']
@@ -115,7 +137,13 @@ def tooltip(text, tip):
 
 def show_results():
     # get values from the session state
-    get_prediction()
+    get_prediction(
+        flight_date = st.session_state.get('flight_date'),
+        flight_time = st.session_state.get('flight_time'),
+        airline_code = st.session_state.get('airline'),
+        origin = st.session_state.get('origin_airport_code'),
+        destination = st.session_state.get('destination_airport_code')
+    )
     prediction= st.session_state.prediction
     on_time_chance = st.session_state.on_time_chance
     really_late_chance = st.session_state.really_late_chance
