@@ -1,0 +1,5 @@
+Blue/Background Color/Positive Highlight Color: #4059A8
+Gray/Border Color: #B7B7B7
+White/Foreground Color: #FFFFFF
+Red/Negative Highlight Color: #CE4646
+Black/Text Color: #000000

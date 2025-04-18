@@ -1,0 +1,6 @@
+column,dtype
+rank,int64
+airport,object
+departure_performance,float64
+year,int64
+airport_code,object

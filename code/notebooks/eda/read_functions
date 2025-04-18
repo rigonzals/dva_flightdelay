@@ -1,0 +1,86 @@
+import polars as pl
+## Function to read in and convert columns of the ACFTREF_20XX.txt
+def read_ACFT(filepath):
+    # read in the dataframe
+    df = pl.read_csv(filepath
+                , ignore_errors = True
+                , infer_schema = False
+                , quote_char = None)
+    #cast number columns to int and manipulate some string columns to get rid of leading and trailing spaces
+    df = df.with_columns(pl.col('MODEL').str.strip_chars()
+                        , pl.col('CODE').str.strip_chars()
+                        , pl.col('TYPE-ENG').str.strip_chars()
+                        , pl.col('NO-ENG').cast(pl.UInt32)
+                        , pl.col('NO-SEATS').cast(pl.UInt32))
+
+    # get rid of what I am assuming are test rows
+    df = df.filter(pl.col('MODEL')!= 'UNKNOWN')
+
+    #select the neccesary columns
+    df = df.select(['CODE'
+                   , 'MODEL'    #we might be able to drop this one
+                   , 'TYPE-ENG'
+                   , 'AC-CAT'
+                   , 'NO-ENG'
+                   , 'NO-SEATS'
+                   , 'AC-WEIGHT'])
+
+    #get rid of engine types that are clearly not commercial aircraft
+    df = df.filter(df['TYPE-ENG'].is_in(['2'    #turboprop
+                                       , '4'   #turbo jet
+                                       , '5'   #turbo fan
+                                        ]))
+
+    #for categorical variables let's create some dummies
+    df = df.to_dummies(['TYPE-ENG'
+                        , 'AC-CAT'
+                        , 'AC-WEIGHT'])
+    
+    return df
+
+#function to read in and do some cleaning on combined flights files
+def read_combined_flights(filepath):
+    #read in the file and keep some data columns from becoming forced to ints
+    df = pl.read_csv(filepath
+                    , ignore_errors = True
+                    , schema_overrides = {'CRSDepTime':pl.String
+                                          , 'DepTime':pl.String
+                                          , 'CRSArrTime':pl.String
+                                          , 'ArrTime':pl.String})
+    #make sure that we have a consistent style fo the departure and arrival times
+    df = df.with_columns(pl.col('DepTime').str.strip_chars('.0').str.pad_start(4,'0')
+                , pl.col('ArrTime').str.strip_chars('.0').str.pad_start(4,'0'))
+    
+    #create a departure date time so we know exactly when the flight took off.
+    df = df.with_columns(pl.concat_str(
+                            [pl.col('FlightDate')
+                            , pl.lit(' ')
+                            , pl.col('DepTime').str.head(2)
+                            , pl.lit(':')
+                            , pl.col('DepTime').str.tail(2)])
+                         .str.to_datetime('%Y-%m-%d %H:%M', strict = False)
+                         .alias('dep_datetime'))
+    
+    #get the arrival datetime by adding the elapsed time to the departure time
+    df = df.with_columns((pl.col('dep_datetime')+pl.duration(minutes = 'ActualElapsedTime'))
+                         .alias('arr_datetime')
+                        )
+    #filter out cancelled and diverted flights, since we cannot control for that.  
+    #Make sure that we remove nulls and unclean rows
+    df = df.filter((df['Cancelled']==False)\
+                  &(df['Diverted']==False)\
+                  &(~df['ArrDelay'].is_null())
+                  &(~df['dep_datetime'].is_null()))
+    return df
+
+# function to read in the master file
+def read_master(filepath):
+    #read in the filepath
+    df = pl.read_csv(filepath
+                , ignore_errors = True
+                , infer_schema = False
+                , quote_char = None)
+    #keep only the columns that we need to join the aircraft ref files
+    df = df.select(['N-NUMBER'
+                   , 'MFR MDL CODE'])
+    return df

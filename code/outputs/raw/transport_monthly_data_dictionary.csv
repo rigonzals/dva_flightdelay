@@ -1,0 +1,138 @@
+column,dtype
+Index,int64
+Date,object
+Air Safety - General Aviation Fatalities,int64
+Highway Fatalities Per 100 Million Vehicle Miles Traveled,float64
+Highway Fatalities,float64
+U.S. Airline Traffic - Total - Seasonally Adjusted,int64
+U.S. Airline Traffic - International - Seasonally Adjusted,int64
+U.S. Airline Traffic - Domestic - Seasonally Adjusted,float64
+Transit Ridership - Other Transit Modes - Adjusted,int64
+Transit Ridership - Fixed Route Bus - Adjusted,int64
+Transit Ridership - Urban Rail - Adjusted,int64
+Freight Rail Intermodal Units,int64
+Freight Rail Carloads,int64
+Highway Vehicle Miles Traveled - All Systems,float64
+Highway Vehicle Miles Traveled - Total Rural,float64
+Highway Vehicle Miles Traveled - Other Rural,float64
+Highway Vehicle Miles Traveled - Rural Other Arterial,float64
+Highway Vehicle Miles Traveled - Rural Interstate,float64
+State and Local Government Construction Spending - Breakwater/Jetty,int64
+State and Local Government Construction Spending - Dam/Levee,int64
+State and Local Government Construction Spending - Conservation and Development,int64
+State and Local Government Construction Spending - Pump Station,int64
+State and Local Government Construction Spending - Line,int64
+State and Local Government Construction Spending - Water Treatment Plant,int64
+State and Local Government Construction Spending - Water Supply,int64
+State and Local Government Construction Spending - Line/Drain,int64
+State and Local Government Construction Spending - Waste Water Treatment Plant,int64
+State and Local Government Construction Spending - Waste Water,int64
+State and Local Government Construction Spending - Line/Pump Station,int64
+State and Local Government Construction Spending - Sewage Treatment Plant,int64
+State and Local Government Construction Spending - Sewage / Dry Waste,int64
+State and Local Government Construction Spending - Sewage and Waste Disposal,int64
+State and Local Government Construction Spending - Rest Facility,int64
+State and Local Government Construction Spending - Bridge,int64
+State and Local Government Construction Spending - Lighting,int64
+State and Local Government Construction Spending - Pavement,int64
+State and Local Government Construction Spending - Highway and Street,int64
+State and Local Government Construction Spending - Power,int64
+State and Local Government Construction Spending - Dock / Marina,int64
+State and Local Government Construction Spending - Water,int64
+State and Local Government Construction Spending - Mass Transit,int64
+State and Local Government Construction Spending - Land Passenger Terminal,int64
+State and Local Government Construction Spending - Land,int64
+State and Local Government Construction Spending - Runway,int64
+State and Local Government Construction Spending - Air Passenger Terminal,int64
+State and Local Government Construction Spending - Air,int64
+State and Local Government Construction Spending - Transportation,int64
+State and Local Government Construction Spending - Park / Camp,int64
+State and Local Government Construction Spending - Neighborhood Center,int64
+State and Local Government Construction Spending - Social Center,int64
+State and Local Government Construction Spending - Convention Center,int64
+State and Local Government Construction Spending - Performance / Meeting Center,int64
+State and Local Government Construction Spending - Sports,int64
+State and Local Government Construction Spending - Amusement and Recreation,int64
+State and Local Government Construction Spending - Fire & Rescue,int64
+State and Local Government Construction Spending - Other Public Safety,int64
+State and Local Government Construction Spending - Police & Sheriff,int64
+State and Local Government Construction Spending - Detention,int64
+State and Local Government Construction Spending - Correctional,int64
+State and Local Government Construction Spending - Public Safety,int64
+State and Local Government Construction Spending - Library / Archive,int64
+State and Local Government Construction Spending - Other Educational,int64
+State and Local Government Construction Spending - Infrastructure,int64
+State and Local Government Construction Spending - Sports & Recreation,int64
+State and Local Government Construction Spending - Dormitory,int64
+State and Local Government Construction Spending - Instructional,int64
+State and Local Government Construction Spending - Higher Education,int64
+State and Local Government Construction Spending - High School,int64
+State and Local Government Construction Spending - Middle School / Junior High,int64
+State and Local Government Construction Spending - Elementary Schools,int64
+State and Local Government Construction Spending - Primary/Secondary Schools,int64
+State and Local Government Construction Spending - Educational,int64
+State and Local Government Construction Spending - Special Care,int64
+State and Local Government Construction Spending - Medical Building,int64
+State and Local Government Construction Spending - Hospital,int64
+State and Local Government Construction Spending - Health Care,int64
+State and Local Government Construction Spending - Parking,int64
+State and Local Government Construction Spending - Automotive,int64
+State and Local Government Construction Spending - Commercial,int64
+State and Local Government Construction Spending - Office,int64
+State and Local Government Construction Spending - Non Residential,int64
+State and Local Government Construction Spending - Multi Family,int64
+State and Local Government Construction Spending - Residential,int64
+State and Local Government Construction Spending - Total,int64
+National Highway Construction Cost Index (NHCCI),float64
+Highway Fuel Price - On-highway Diesel,float64
+Highway Fuel Price - Regular Gasoline,float64
+Transportation Employment - Pipeline Transportation,int64
+Transportation Employment - Water Transportation,int64
+Transportation Employment - Rail Transportation,int64
+Transportation Employment - Air Transportation,int64
+Transportation Employment - Transit and ground passenger transportation,int64
+Transportation Employment - Truck Transportation,int64
+Personal Spending on Transportation - Transportation Services - Seasonally Adjusted,float64
+Personal Spending on Transportation - Gasoline and Other Energy Goods - Seasonally Adjusted,float64
+Personal Spending on Transportation - Motor Vehicles and Parts - Seasonally Adjusted,float64
+Unemployment Rate - Seasonally Adjusted,float64
+Labor Force Participation Rate - Seasonally Adjusted,float64
+Unemployed - Seasonally Adjusted,int64
+Real Gross Domestic Product - Seasonally Adjusted,float64
+Passenger Rail Passengers,int64
+Passenger Rail Passenger Miles,int64
+Passenger Rail Total Train Miles,int64
+Passenger Rail Employee Hours Worked,int64
+Passenger Rail Yard Switching Miles,int64
+Passenger Rail Total Reports,float64
+U.S. Waterway Tonnage,int64
+Amtrak On-time Performance,float64
+Rail Fatalities,float64
+Rail Fatalities at Highway-Rail Crossings,int64
+Trespasser Fatalities Not at Highwaya-Rail Crossings,int64
+Transportation Services Index - Freight,float64
+Transportation Services Index - Passenger,float64
+Transportation Services Index - Combined,float64
+U.S.-Canada Incoming Person Crossings,int64
+U.S.-Canada Incoming Truck Crossings,int64
+U.S.-Mexico Incoming Person Crossings,int64
+Air Safety - Air Taxi and Commuter Fatalities,float64
+Heavy truck sales,int64
+U.S.-Mexico Incoming Truck Crossings,int64
+Light truck sales,int64
+Auto sales,int64
+Air Safety - Air Carrier Fatalities,float64
+U.S. Air Carrier Cargo (millions of revenue ton-miles) - International,float64
+Truck tonnage index,float64
+U.S. Air Carrier Cargo (millions of revenue ton-miles) - Domestic,float64
+Heavy truck sales SAAR (millions),int64
+U.S. Airline Traffic - Total - Non Seasonally Adjusted,float64
+Light truck sales SAAR (millions),float64
+U.S. Airline Traffic - International - Non Seasonally Adjusted,float64
+Auto sales SAAR (millions),int64
+U.S. Airline Traffic - Domestic - Non Seasonally Adjusted,float64
+Transborder - Total North American Freight,float64
+Transborder - U.S. - Mexico Freight,float64
+U.S. marketing air carriers on-time performance (percent),float64
+Transborder - U.S. - Canada Freight,float64
+dt,object
