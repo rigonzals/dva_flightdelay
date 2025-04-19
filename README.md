@@ -8,21 +8,23 @@ Developed by Team 115: Scott Crabtree, Rodrigo González, Prabakaran Rajagopal, 
 # Installation
 
 ## Directions for Windows Users
-Create the virtual environment by running the following:
-
-1. Create the virtual environment flight_pred
-- First, create a virtual environment named flight_pred: `python -m venv flight_pred`
-- Activate the environment:`code\flight_pred\Scripts\activate`
-2. Install Dependencies
-- Navigate to the `code/frontend` folder and install the necessary packages: `pip install -r requirements.txt`
-3. Run the Flask App
-- Start the Flask backend from the `code/frontend` folder: `python model_flask.py`
-4. Launch the Streamlit App
-- Open a new terminal tab, activate the environment again, and navigate to the same frontend folder
-  - launch the same environemnt: `flight_pred\Scripts\activate`
-  - Launch the strealit app: `streamlit run streamlit_app.py`
-5. Access the app
-- Once the Streamlit server is running, you can access the app in your browser at http://localhost:8501
+The following can be performed using Powershell.
+1. Clone the git repository for the application to your local machine:
+- `git clone https://github.com/rigonzals/dva_flightdelay.git`
+2. Within the newly created “dva_flightdelay\code” folder, create and activate a python virtual environment called “flight_pred”:
+- `python -m venv flight_pred`
+- `flight_pred\Scripts\activate`
+  - Run this within the “dva_flightdelay\code” folder. You may need to temporarily change your systems ExecutionPolicy tp activate the environment. That will not be covered here.
+3. Change to the “frontend” directory within the “dva_flightdelay” folder and install dependencies.
+- `cd frontend`
+- `pip install -r requirements.txt`
+4. Run the Flask App.
+- `python model_flask.py`
+5. Open a new Powershell tab, navigate to the “dva_flightdelay\code” folder, activate the “flight_pred” python virtual environment just as before and then run the Streamlit app in the "frontend" directory.
+- `flight_pred\Scripts\activate`
+- `cd frontend`
+- `streamlit run streamlit_app.py`
+6. Once the Streamlit server is running, you can access the app in your browser at http://localhost:8501
 
 
 ## Directions for Mac Users
